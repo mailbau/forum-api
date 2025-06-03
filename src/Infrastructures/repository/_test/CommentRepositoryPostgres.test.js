@@ -125,4 +125,51 @@ describe('CommentRepositoryPostgres', () => {
                 .rejects.toThrowError(NotFoundError);
         });
     });
+
+    describe('getCommentsByThreadId function', () => {
+        const user1 = testUserId; // 'user-delete-owner' (username: 'deletecommentowner')
+        const user2 = anotherUserId; // 'user-another' (username: 'anotheruserfordelete')
+        const currentTestThreadId = testThreadId; // 'thread-delete-test'
+
+        it('should return empty array if thread has no comments', async () => {
+            const commentRepositoryPostgres = new CommentRepositoryPostgres(pool, {});
+            const comments = await commentRepositoryPostgres.getCommentsByThreadId(currentTestThreadId);
+            expect(comments).toEqual([]);
+        });
+
+        it('should return comments for a thread ordered by date ascending', async () => {
+            // Arrange: Add comments with different dates
+            await CommentsTableTestHelper.addComment({
+                id: 'comment-c1', owner: user1, threadId: currentTestThreadId, content: 'First comment', date: new Date('2023-01-01T10:00:00.000Z'),
+            });
+            await CommentsTableTestHelper.addComment({
+                id: 'comment-c3', owner: user2, threadId: currentTestThreadId, content: 'Third comment', date: new Date('2023-01-01T12:00:00.000Z'), isDeleted: true,
+            });
+            await CommentsTableTestHelper.addComment({
+                id: 'comment-c2', owner: user1, threadId: currentTestThreadId, content: 'Second comment', date: new Date('2023-01-01T11:00:00.000Z'),
+            });
+
+            const commentRepositoryPostgres = new CommentRepositoryPostgres(pool, {});
+
+            // Action
+            const comments = await commentRepositoryPostgres.getCommentsByThreadId(currentTestThreadId);
+
+            // Assert
+            expect(comments).toHaveLength(3);
+            expect(comments[0].id).toEqual('comment-c1');
+            expect(comments[0].username).toEqual('deletecommentowner');
+            expect(comments[0].content).toEqual('First comment');
+            expect(comments[0].is_deleted).toEqual(false);
+
+            expect(comments[1].id).toEqual('comment-c2');
+            expect(comments[1].username).toEqual('deletecommentowner');
+            expect(comments[1].content).toEqual('Second comment');
+            expect(comments[1].is_deleted).toEqual(false);
+
+            expect(comments[2].id).toEqual('comment-c3');
+            expect(comments[2].username).toEqual('anotheruserfordelete');
+            expect(comments[2].content).toEqual('Third comment'); // Raw content from DB
+            expect(comments[2].is_deleted).toEqual(true);
+        });
+    });
 });

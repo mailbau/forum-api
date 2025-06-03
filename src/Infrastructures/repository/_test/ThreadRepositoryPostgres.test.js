@@ -50,20 +50,25 @@ describe('ThreadRepositoryPostgres', () => {
 
     describe('getThreadById function', () => {
         it('should throw NotFoundError when thread not found', async () => {
-            // Arrange
             const threadRepositoryPostgres = new ThreadRepositoryPostgres(pool, {});
-
-            // Action & Assert
             await expect(threadRepositoryPostgres.getThreadById('thread-nonexistent'))
                 .rejects.toThrowError(NotFoundError);
         });
 
-        it('should return thread data when thread is found', async () => {
+        it('should return thread data including username when thread is found', async () => {
             // Arrange
-            const threadId = 'thread-gettest';
-            const ownerId = 'user-test-owner';
+            const ownerId = 'user-owner-for-get';
+            const ownerUsername = 'threadgetowner'; // Define username for clarity
+
+            // Ensure owner exists in users table
+            const users = await UsersTableTestHelper.findUsersById(ownerId);
+            if (users.length === 0) {
+                await UsersTableTestHelper.addUser({ id: ownerId, username: ownerUsername });
+            }
+
+            const threadId = 'thread-gettest-detail';
             await ThreadsTableTestHelper.addThread({
-                id: threadId, title: 'Get Test', body: 'Body Get Test', owner: ownerId,
+                id: threadId, title: 'Get Test Detail', body: 'Body Get Test Detail', owner: ownerId,
             });
             const threadRepositoryPostgres = new ThreadRepositoryPostgres(pool, {});
 
@@ -73,9 +78,9 @@ describe('ThreadRepositoryPostgres', () => {
             // Assert
             expect(thread).toBeDefined();
             expect(thread.id).toEqual(threadId);
-            expect(thread.title).toEqual('Get Test');
-            expect(thread.body).toEqual('Body Get Test');
-            expect(thread.owner).toEqual(ownerId);
+            expect(thread.title).toEqual('Get Test Detail');
+            expect(thread.body).toEqual('Body Get Test Detail');
+            expect(thread.username).toEqual(ownerUsername); // Check against the defined username
             expect(thread.date).toBeDefined();
         });
     });

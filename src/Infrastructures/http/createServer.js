@@ -74,17 +74,43 @@ const createServer = async (container) => {
         return newResponse;
       }
 
-      if (!translatedError.isServer) {
-        return h.continue;
+      // If it's not a ClientError and it's a server error (isBoom && isServer)
+      if (response.isBoom && response.isServer) { // Check if it's a Boom server error
+        console.error('------ Original Server Error Start ------');
+        console.error(response.stack || response.message || response); // Log stack or message of the Boom error
+        if (response.data) { // Boom often wraps original error in data
+          console.error('Wrapped Error Data:', response.data);
+        }
+        if (response.output && response.output.payload && response.output.payload.message !== 'An internal server error occurred') {
+          console.error('Boom Payload Message:', response.output.payload.message);
+        }
+        console.error('------ Original Server Error End ------');
+
+        const newResponse = h.response({
+          status: 'error',
+          message: 'terjadi kegagalan pada server kami',
+        });
+        newResponse.code(500);
+        return newResponse;
       }
 
+      // If it's not a ClientError and not a Boom server error, but still an Error
+      // This might catch generic errors that weren't Boomified yet
+      if (!translatedError.isServer) { // This condition might be part of the original logic
+        return h.continue; // Let Hapi handle other client errors (like 404 for truly unmatched routes)
+      }
+
+      // Fallback for other unexpected errors that are not ClientError but are Error instances
+      console.error('------ Unhandled Application Error Start ------');
+      console.error(response.stack || response.message || response); // Log the actual error
+      console.error('------ Unhandled Application Error End ------');
       const newResponse = h.response({
         status: 'error',
-        message: 'terjadi kegagalan pada server kami',
+        message: 'terjadi kegagalan pada server kami (unexpected)',
       });
       newResponse.code(500);
-      console.error(response);
       return newResponse;
+
     }
 
     return h.continue;

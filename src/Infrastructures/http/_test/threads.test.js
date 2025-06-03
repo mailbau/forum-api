@@ -302,4 +302,103 @@ describe('/threads endpoint', () => {
             expect(responseJson.message).toEqual('komentar tidak ditemukan atau sudah dihapus');
         });
     });
+
+    describe('when GET /threads/{threadId}', () => {
+        let threadIdForGet;
+        const user1 = testUserId; // 'user-threadtest-suite', username 'threaduser1'
+        const user2 = anotherTestUserId; // 'user-anothertest-suite', username 'threaduser2'
+
+        beforeEach(async () => {
+            // Create a thread
+            threadIdForGet = 'thread-detail-test';
+            await ThreadsTableTestHelper.addThread({
+                id: threadIdForGet,
+                title: 'Detail Thread Title',
+                body: 'Detail thread body.',
+                owner: user1, // Owned by threaduser1
+                date: new Date('2024-01-15T10:00:00.000Z'),
+            });
+
+            // Add some comments
+            await CommentsTableTestHelper.addComment({
+                id: 'comment-get-1',
+                content: 'First comment for detail',
+                owner: user2, // Comment by threaduser2
+                threadId: threadIdForGet,
+                date: new Date('2024-01-15T10:05:00.000Z'),
+            });
+            await CommentsTableTestHelper.addComment({
+                id: 'comment-get-2',
+                content: 'Second comment, deleted',
+                owner: user1, // Comment by threaduser1
+                threadId: threadIdForGet,
+                date: new Date('2024-01-15T10:10:00.000Z'),
+                isDeleted: true,
+            });
+            await CommentsTableTestHelper.addComment({
+                id: 'comment-get-3',
+                content: 'Third comment',
+                owner: user2, // Comment by threaduser2
+                threadId: threadIdForGet,
+                date: new Date('2024-01-15T10:02:00.000Z'), // Earlier than first to test sorting
+            });
+        });
+
+        it('should response 200 and return thread details with comments', async () => {
+            // Action
+            const response = await server.inject({
+                method: 'GET',
+                url: `/threads/${threadIdForGet}`,
+            });
+
+            // Assert
+            const responseJson = JSON.parse(response.payload);
+            expect(response.statusCode).toEqual(200);
+            expect(responseJson.status).toEqual('success');
+            expect(responseJson.data.thread).toBeDefined();
+
+            const { thread } = responseJson.data;
+            expect(thread.id).toEqual(threadIdForGet);
+            expect(thread.title).toEqual('Detail Thread Title');
+            expect(thread.body).toEqual('Detail thread body.');
+            expect(new Date(thread.date).toISOString()).toEqual('2024-01-15T10:00:00.000Z');
+            expect(thread.username).toEqual('threaduser1'); // Username of thread owner
+
+            expect(thread.comments).toBeInstanceOf(Array);
+            expect(thread.comments).toHaveLength(3);
+
+            // Check sorting (by date ascending) and content transformation
+            // comment-get-3 (10:02)
+            // comment-get-1 (10:05)
+            // comment-get-2 (10:10) - deleted
+            expect(thread.comments[0].id).toEqual('comment-get-3');
+            expect(thread.comments[0].username).toEqual('threaduser2');
+            expect(new Date(thread.comments[0].date).toISOString()).toEqual('2024-01-15T10:02:00.000Z');
+            expect(thread.comments[0].content).toEqual('Third comment');
+
+            expect(thread.comments[1].id).toEqual('comment-get-1');
+            expect(thread.comments[1].username).toEqual('threaduser2');
+            expect(new Date(thread.comments[1].date).toISOString()).toEqual('2024-01-15T10:05:00.000Z');
+            expect(thread.comments[1].content).toEqual('First comment for detail');
+
+            expect(thread.comments[2].id).toEqual('comment-get-2');
+            expect(thread.comments[2].username).toEqual('threaduser1');
+            expect(new Date(thread.comments[2].date).toISOString()).toEqual('2024-01-15T10:10:00.000Z');
+            expect(thread.comments[2].content).toEqual('**komentar telah dihapus**');
+        });
+
+        it('should response 404 when threadId does not exist', async () => {
+            // Action
+            const response = await server.inject({
+                method: 'GET',
+                url: '/threads/nonexistent-thread-id-for-get',
+            });
+
+            // Assert
+            const responseJson = JSON.parse(response.payload);
+            expect(response.statusCode).toEqual(404);
+            expect(responseJson.status).toEqual('fail');
+            expect(responseJson.message).toEqual('thread tidak ditemukan');
+        });
+    });
 });

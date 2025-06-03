@@ -53,8 +53,26 @@ class CommentRepositoryPostgres extends CommentRepository {
         }
     }
 
-    // Implement other methods like getCommentById etc. if needed for other features
-    // For getCommentById, you might want to check is_deleted status based on requirements.
+    async getCommentsByThreadId(threadId) { // Added
+        const query = {
+            text: `
+            SELECT
+              comments.id,
+              users.username,
+              comments.date,
+              comments.content,
+              comments.is_deleted
+            FROM comments
+            INNER JOIN users ON comments.owner = users.id
+            WHERE comments.thread_id = $1
+            ORDER BY comments.date ASC
+          `,
+            values: [threadId],
+        };
+        const result = await this._pool.query(query);
+        // It's okay if it returns an empty array if no comments, not a NotFoundError
+        return result.rows;
+    }
 }
 
 module.exports = CommentRepositoryPostgres;
