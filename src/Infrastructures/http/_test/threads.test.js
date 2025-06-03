@@ -441,4 +441,108 @@ describe('/threads endpoint', () => {
             expect(responseJson.message).toEqual('thread tidak ditemukan');
         });
     });
+
+    describe('when DELETE /threads/{threadId}/comments/{commentId}/replies/{replyId}', () => {
+        let threadIdForDeleteReply;
+        let commentIdForDeleteReply;
+        let replyIdUser1;
+        // user1 = testUserId, user2 = anotherTestUserId
+        // accessTokenUser1, accessTokenUser2 are available
+
+        beforeEach(async () => {
+            // Setup: thread -> comment -> reply (owned by user1)
+            threadIdForDeleteReply = 'del-rep-thread-1';
+            await ThreadsTableTestHelper.addThread({ id: threadIdForDeleteReply, owner: testUserId });
+
+            commentIdForDeleteReply = 'del-rep-comment-1';
+            await CommentsTableTestHelper.addComment({ id: commentIdForDeleteReply, owner: testUserId, threadId: threadIdForDeleteReply });
+
+            replyIdUser1 = 'del-rep-reply-1';
+            await RepliesTableTestHelper.addReply({ id: replyIdUser1, owner: testUserId, commentId: commentIdForDeleteReply, content: 'User1 reply for deletion' });
+        });
+
+        it('should response 200 and soft delete the reply when user is the owner', async () => {
+            const response = await server.inject({
+                method: 'DELETE',
+                url: `/threads/${threadIdForDeleteReply}/comments/${commentIdForDeleteReply}/replies/${replyIdUser1}`,
+                headers: { Authorization: `Bearer ${accessTokenUser1}` },
+            });
+
+            const responseJson = JSON.parse(response.payload);
+            expect(response.statusCode).toEqual(200);
+            expect(responseJson.status).toEqual('success');
+
+            const [reply] = await RepliesTableTestHelper.findReplyById(replyIdUser1);
+            expect(reply).toBeDefined();
+            expect(reply.is_deleted).toEqual(true);
+        });
+
+        it('should response 403 when user is not the reply owner', async () => {
+            const response = await server.inject({
+                method: 'DELETE',
+                url: `/threads/${threadIdForDeleteReply}/comments/${commentIdForDeleteReply}/replies/${replyIdUser1}`,
+                headers: { Authorization: `Bearer ${accessTokenUser2}` }, // User2 trying to delete User1's reply
+            });
+
+            const responseJson = JSON.parse(response.payload);
+            expect(response.statusCode).toEqual(403);
+            expect(responseJson.status).toEqual('fail');
+            expect(responseJson.message).toEqual('anda tidak berhak mengakses resource ini');
+        });
+
+        it('should response 401 when no access token is provided', async () => {
+            const response = await server.inject({
+                method: 'DELETE',
+                url: `/threads/${threadIdForDeleteReply}/comments/${commentIdForDeleteReply}/replies/${replyIdUser1}`,
+            });
+            expect(response.statusCode).toEqual(401);
+        });
+
+        it('should response 404 when threadId does not exist', async () => {
+            const response = await server.inject({
+                method: 'DELETE',
+                url: `/threads/nonexistent-thread/comments/${commentIdForDeleteReply}/replies/${replyIdUser1}`,
+                headers: { Authorization: `Bearer ${accessTokenUser1}` },
+            });
+            const responseJson = JSON.parse(response.payload);
+            expect(response.statusCode).toEqual(404);
+            expect(responseJson.message).toEqual('thread tidak ditemukan');
+        });
+
+        it('should response 404 when commentId does not exist', async () => {
+            const response = await server.inject({
+                method: 'DELETE',
+                url: `/threads/${threadIdForDeleteReply}/comments/nonexistent-comment/replies/${replyIdUser1}`,
+                headers: { Authorization: `Bearer ${accessTokenUser1}` },
+            });
+            const responseJson = JSON.parse(response.payload);
+            expect(response.statusCode).toEqual(404);
+            expect(responseJson.message).toEqual('komentar tidak ditemukan atau sudah dihapus');
+        });
+
+        it('should response 404 when replyId does not exist', async () => {
+            const response = await server.inject({
+                method: 'DELETE',
+                url: `/threads/${threadIdForDeleteReply}/comments/${commentIdForDeleteReply}/replies/nonexistent-reply`,
+                headers: { Authorization: `Bearer ${accessTokenUser1}` },
+            });
+            const responseJson = JSON.parse(response.payload);
+            expect(response.statusCode).toEqual(404);
+            expect(responseJson.message).toEqual('balasan tidak ditemukan atau sudah dihapus');
+        });
+
+        it('should response 404 when trying to delete an already soft-deleted reply', async () => {
+            // First, soft-delete the reply via DB or a successful API call if preferred for setup
+            await pool.query('UPDATE replies SET is_deleted = TRUE WHERE id = $1', [replyIdUser1]);
+
+            const response = await server.inject({
+                method: 'DELETE',
+                url: `/threads/${threadIdForDeleteReply}/comments/${commentIdForDeleteReply}/replies/${replyIdUser1}`,
+                headers: { Authorization: `Bearer ${accessTokenUser1}` },
+            });
+            const responseJson = JSON.parse(response.payload);
+            expect(response.statusCode).toEqual(404); // Because verifyReplyOwner won't find an active reply
+            expect(responseJson.message).toEqual('balasan tidak ditemukan atau sudah dihapus');
+        });
+    });
 });

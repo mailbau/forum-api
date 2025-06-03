@@ -1,6 +1,7 @@
 const AddedReply = require('../../Domains/replies/entities/AddedReply');
 const ReplyRepository = require('../../Domains/replies/ReplyRepository');
-// Import NotFoundError, AuthorizationError if needed for other methods
+const NotFoundError = require('../../Commons/exceptions/NotFoundError');
+const AuthorizationError = require('../../Commons/exceptions/AuthorizationError');
 
 class ReplyRepositoryPostgres extends ReplyRepository {
     constructor(pool, idGenerator) {
@@ -40,6 +41,34 @@ class ReplyRepositoryPostgres extends ReplyRepository {
         };
         const result = await this._pool.query(query);
         return result.rows;
+    }
+
+    async verifyReplyOwner(replyId, ownerId) { // Added
+        const query = {
+            text: 'SELECT owner FROM replies WHERE id = $1 AND is_deleted = FALSE',
+            values: [replyId],
+        };
+        const result = await this._pool.query(query);
+
+        if (!result.rowCount) {
+            throw new NotFoundError('balasan tidak ditemukan atau sudah dihapus');
+        }
+        if (result.rows[0].owner !== ownerId) {
+            throw new AuthorizationError('anda tidak berhak mengakses resource ini');
+        }
+    }
+
+    async deleteReplyById(replyId) { // Added for soft delete
+        const query = {
+            text: 'UPDATE replies SET is_deleted = TRUE WHERE id = $1 RETURNING id',
+            values: [replyId],
+        };
+        const result = await this._pool.query(query);
+
+        if (!result.rowCount) {
+            // This case should ideally be caught by verifyReplyOwner or a verifyReplyExists first
+            throw new NotFoundError('Gagal menghapus balasan. Balasan tidak ditemukan.');
+        }
     }
 }
 

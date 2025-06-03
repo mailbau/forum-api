@@ -6,7 +6,8 @@ const RepliesTableTestHelper = require('../../../../tests/RepliesTableTestHelper
 const AddedReply = require('../../../Domains/replies/entities/AddedReply');
 const pool = require('../../database/postgres/pool');
 const ReplyRepositoryPostgres = require('../ReplyRepositoryPostgres');
-// Import NotFoundError, AuthorizationError if needed for future tests
+const NotFoundError = require('../../../Commons/exceptions/NotFoundError');
+const AuthorizationError = require('../../../Commons/exceptions/AuthorizationError');
 
 describe('ReplyRepositoryPostgres', () => {
     const userId = 'user-reply-test';
@@ -105,6 +106,67 @@ describe('ReplyRepositoryPostgres', () => {
             expect(replies[2].id).toEqual('reply-r3');
             expect(replies[2].content).toEqual('Third reply (deleted)'); // Raw content
             expect(replies[2].is_deleted).toEqual(true);
+        });
+    });
+
+    describe('verifyReplyOwner function', () => {
+        const replyId = 'reply-verify-owner';
+        beforeEach(async () => {
+            await RepliesTableTestHelper.addReply({
+                id: replyId, owner: userId, commentId, content: 'verify owner reply content',
+            });
+        });
+
+        it('should not throw error when user is the owner and reply exists and not deleted', async () => {
+            const replyRepositoryPostgres = new ReplyRepositoryPostgres(pool, {});
+            await expect(replyRepositoryPostgres.verifyReplyOwner(replyId, userId))
+                .resolves.not.toThrowError();
+        });
+
+        it('should throw AuthorizationError when user is not the owner', async () => {
+            const anotherOwnerId = 'user-another-for-reply'; // Ensure this user exists or add them
+            await UsersTableTestHelper.addUser({ id: anotherOwnerId, username: 'anotherreplyowner' });
+
+            const replyRepositoryPostgres = new ReplyRepositoryPostgres(pool, {});
+            await expect(replyRepositoryPostgres.verifyReplyOwner(replyId, anotherOwnerId))
+                .rejects.toThrowError(AuthorizationError);
+        });
+
+        it('should throw NotFoundError if reply does not exist', async () => {
+            const replyRepositoryPostgres = new ReplyRepositoryPostgres(pool, {});
+            await expect(replyRepositoryPostgres.verifyReplyOwner('nonexistent-reply', userId))
+                .rejects.toThrowError(NotFoundError);
+        });
+
+        it('should throw NotFoundError if reply is already soft-deleted', async () => {
+            await pool.query('UPDATE replies SET is_deleted = TRUE WHERE id = $1', [replyId]);
+            const replyRepositoryPostgres = new ReplyRepositoryPostgres(pool, {});
+            await expect(replyRepositoryPostgres.verifyReplyOwner(replyId, userId))
+                .rejects.toThrowError(NotFoundError);
+        });
+    });
+
+    describe('deleteReplyById function (soft delete)', () => {
+        const replyIdToDelete = 'reply-to-be-deleted';
+        beforeEach(async () => {
+            await RepliesTableTestHelper.addReply({
+                id: replyIdToDelete, owner: userId, commentId, content: 'this will be deleted',
+            });
+        });
+
+        it('should soft delete the reply by setting is_deleted to true', async () => {
+            const replyRepositoryPostgres = new ReplyRepositoryPostgres(pool, {});
+            await replyRepositoryPostgres.deleteReplyById(replyIdToDelete);
+
+            const [deletedReply] = await RepliesTableTestHelper.findReplyById(replyIdToDelete);
+            expect(deletedReply).toBeDefined();
+            expect(deletedReply.is_deleted).toEqual(true);
+        });
+
+        it('should throw NotFoundError if reply to delete does not exist', async () => {
+            const replyRepositoryPostgres = new ReplyRepositoryPostgres(pool, {});
+            await expect(replyRepositoryPostgres.deleteReplyById('nonexistent-reply-for-delete'))
+                .rejects.toThrowError(NotFoundError);
         });
     });
 });
