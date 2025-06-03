@@ -10,6 +10,7 @@ describe('ThreadDetail entity', () => {
             date: new Date().toISOString(),
             content: 'sebuah comment',
             isDeleted: false,
+            replies: [],
         };
         const commentDetail = new CommentDetail(commentPayload);
 

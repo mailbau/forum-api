@@ -4,20 +4,21 @@ class CommentDetail {
         this._verifyPayload(payload);
 
         const {
-            id, username, date, content, isDeleted, // isDeleted comes from the repository
+            id, username, date, content, isDeleted, replies
         } = payload;
 
         this.id = id;
         this.username = username;
         this.date = date;
         this.content = isDeleted ? '**komentar telah dihapus**' : content;
+        this.replies = replies;
     }
 
     _verifyPayload({
-        id, username, date, content, // Raw content before transformation
-        isDeleted,
+        id, username, date, content,
+        isDeleted, replies
     }) {
-        if (!id || !username || !date || content === undefined || content === null || isDeleted === undefined) {
+        if (!id || !username || !date || content === undefined || content === null || isDeleted === undefined || !replies) {
             throw new Error('COMMENT_DETAIL.NOT_CONTAIN_NEEDED_PROPERTY');
         }
 
@@ -27,6 +28,7 @@ class CommentDetail {
             || !(date instanceof Date || typeof date === 'string') // Allow string for ISO date from DB
             || typeof content !== 'string'
             || typeof isDeleted !== 'boolean'
+            || !Array.isArray(replies)
         ) {
             throw new Error('COMMENT_DETAIL.NOT_MEET_DATA_TYPE_SPECIFICATION');
         }

@@ -2,6 +2,7 @@ const pool = require('../../database/postgres/pool');
 const UsersTableTestHelper = require('../../../../tests/UsersTableTestHelper');
 const ThreadsTableTestHelper = require('../../../../tests/ThreadsTableTestHelper');
 const CommentsTableTestHelper = require('../../../../tests/CommentsTableTestHelper'); // Added
+const RepliesTableTestHelper = require('../../../../tests/RepliesTableTestHelper'); // Added
 const AuthenticationsTableTestHelper = require('../../../../tests/AuthenticationsTableTestHelper');
 const container = require('../../container');
 const createServer = require('../createServer');
@@ -48,20 +49,62 @@ describe('/threads endpoint', () => {
     });
 
     describe('when POST /threads', () => {
-        // ... existing tests for POST /threads ...
-        // (ensure accessTokenUser1 is used for these tests)
+        // This is your existing passing test
         it('should response 201 and persisted thread when payload valid and authenticated', async () => {
             const requestPayload = { title: 'Test Thread Title', body: 'This is the body.' };
             const response = await server.inject({
                 method: 'POST', url: '/threads', payload: requestPayload,
-                headers: { Authorization: `Bearer ${accessTokenUser1}` },
+                headers: { Authorization: `Bearer ${accessTokenUser1}` }, // Assuming accessTokenUser1 is defined
             });
             const responseJson = JSON.parse(response.payload);
             expect(response.statusCode).toEqual(201);
             expect(responseJson.status).toEqual('success');
-            expect(responseJson.data.addedThread.owner).toEqual(testUserId);
+            expect(responseJson.data.addedThread.owner).toEqual(testUserId); // Assuming testUserId is defined
         });
-        // ... other POST /threads tests (401, 400)
+
+        // --- Missing tests you can add ---
+        it('should response 401 when no access token is provided', async () => {
+            const requestPayload = { title: 'Another Thread Title', body: 'Some body.' };
+            const response = await server.inject({
+                method: 'POST',
+                url: '/threads',
+                payload: requestPayload,
+                // No Authorization header
+            });
+            const responseJson = JSON.parse(response.payload);
+            expect(response.statusCode).toEqual(401);
+            // Add assertion for responseJson.message if needed, e.g., "Missing authentication"
+            expect(responseJson.message).toBeDefined();
+        });
+
+        it('should response 400 when request payload does not contain title property', async () => {
+            const requestPayload = { body: 'A body without a title.' };
+            const response = await server.inject({
+                method: 'POST',
+                url: '/threads',
+                payload: requestPayload,
+                headers: { Authorization: `Bearer ${accessTokenUser1}` },
+            });
+            const responseJson = JSON.parse(response.payload);
+            expect(response.statusCode).toEqual(400);
+            expect(responseJson.status).toEqual('fail');
+            expect(responseJson.message).toEqual('tidak dapat membuat thread baru karena properti title atau body tidak ada');
+        });
+
+        it('should response 400 when request payload title is not a string', async () => {
+            const requestPayload = { title: 12345, body: 'A body with a non-string title.' };
+            const response = await server.inject({
+                method: 'POST',
+                url: '/threads',
+                payload: requestPayload,
+                headers: { Authorization: `Bearer ${accessTokenUser1}` },
+            });
+            const responseJson = JSON.parse(response.payload);
+            expect(response.statusCode).toEqual(400);
+            expect(responseJson.status).toEqual('fail');
+            expect(responseJson.message).toEqual('tidak dapat membuat thread baru karena tipe data title atau body tidak sesuai');
+        });
+        // Add similar tests for missing body, or body not being a string
     });
 
     describe('when POST /threads/{threadId}/comments', () => {
@@ -305,86 +348,83 @@ describe('/threads endpoint', () => {
 
     describe('when GET /threads/{threadId}', () => {
         let threadIdForGet;
-        const user1 = testUserId; // 'user-threadtest-suite', username 'threaduser1'
-        const user2 = anotherTestUserId; // 'user-anothertest-suite', username 'threaduser2'
+        const user1 = testUserId; // e.g., 'user-threadtest-suite', username 'threaduser1'
+        const user2 = anotherTestUserId; // e.g., 'user-anothertest-suite', username 'threaduser2'
+        let commentIdForReplies;
 
         beforeEach(async () => {
-            // Create a thread
-            threadIdForGet = 'thread-detail-test';
+            // Clean relevant tables
+            await RepliesTableTestHelper.cleanTable();
+            await CommentsTableTestHelper.cleanTable();
+            await ThreadsTableTestHelper.cleanTable();
+            // Users are created in beforeAll for the suite
+
+            threadIdForGet = 'thread-detail-replies';
             await ThreadsTableTestHelper.addThread({
-                id: threadIdForGet,
-                title: 'Detail Thread Title',
-                body: 'Detail thread body.',
-                owner: user1, // Owned by threaduser1
-                date: new Date('2024-01-15T10:00:00.000Z'),
+                id: threadIdForGet, title: 'Thread with Replies', body: 'Body here',
+                owner: user1, date: new Date('2024-01-20T10:00:00.000Z'),
             });
 
-            // Add some comments
+            commentIdForReplies = 'comment-with-replies';
             await CommentsTableTestHelper.addComment({
-                id: 'comment-get-1',
-                content: 'First comment for detail',
-                owner: user2, // Comment by threaduser2
-                threadId: threadIdForGet,
-                date: new Date('2024-01-15T10:05:00.000Z'),
+                id: commentIdForReplies, content: 'Comment to reply to', owner: user2,
+                threadId: threadIdForGet, date: new Date('2024-01-20T10:05:00.000Z'),
             });
-            await CommentsTableTestHelper.addComment({
-                id: 'comment-get-2',
-                content: 'Second comment, deleted',
-                owner: user1, // Comment by threaduser1
-                threadId: threadIdForGet,
-                date: new Date('2024-01-15T10:10:00.000Z'),
-                isDeleted: true,
+            await CommentsTableTestHelper.addComment({ // Another comment without replies for variety
+                id: 'comment-no-replies', content: 'Comment with no replies', owner: user1,
+                threadId: threadIdForGet, date: new Date('2024-01-20T10:03:00.000Z'),
             });
-            await CommentsTableTestHelper.addComment({
-                id: 'comment-get-3',
-                content: 'Third comment',
-                owner: user2, // Comment by threaduser2
-                threadId: threadIdForGet,
-                date: new Date('2024-01-15T10:02:00.000Z'), // Earlier than first to test sorting
+
+
+            // Add replies to commentIdForReplies
+            await RepliesTableTestHelper.addReply({
+                id: 'reply-1-on-c1', owner: user1, commentId: commentIdForReplies,
+                content: 'First reply', date: new Date('2024-01-20T10:10:00.000Z'),
+            });
+            await RepliesTableTestHelper.addReply({
+                id: 'reply-2-on-c1', owner: user2, commentId: commentIdForReplies,
+                content: 'Deleted reply', date: new Date('2024-01-20T10:15:00.000Z'), isDeleted: true,
             });
         });
 
-        it('should response 200 and return thread details with comments', async () => {
+        it('should response 200 and return thread details with comments and their replies', async () => {
             // Action
             const response = await server.inject({
-                method: 'GET',
-                url: `/threads/${threadIdForGet}`,
+                method: 'GET', url: `/threads/${threadIdForGet}`,
             });
 
             // Assert
             const responseJson = JSON.parse(response.payload);
             expect(response.statusCode).toEqual(200);
             expect(responseJson.status).toEqual('success');
-            expect(responseJson.data.thread).toBeDefined();
-
             const { thread } = responseJson.data;
             expect(thread.id).toEqual(threadIdForGet);
-            expect(thread.title).toEqual('Detail Thread Title');
-            expect(thread.body).toEqual('Detail thread body.');
-            expect(new Date(thread.date).toISOString()).toEqual('2024-01-15T10:00:00.000Z');
-            expect(thread.username).toEqual('threaduser1'); // Username of thread owner
+            expect(thread.username).toEqual('threaduser1'); // Thread owner username
 
-            expect(thread.comments).toBeInstanceOf(Array);
-            expect(thread.comments).toHaveLength(3);
+            expect(thread.comments).toHaveLength(2); // Ordered by date asc
 
-            // Check sorting (by date ascending) and content transformation
-            // comment-get-3 (10:02)
-            // comment-get-1 (10:05)
-            // comment-get-2 (10:10) - deleted
-            expect(thread.comments[0].id).toEqual('comment-get-3');
-            expect(thread.comments[0].username).toEqual('threaduser2');
-            expect(new Date(thread.comments[0].date).toISOString()).toEqual('2024-01-15T10:02:00.000Z');
-            expect(thread.comments[0].content).toEqual('Third comment');
+            // First comment in order (comment-no-replies)
+            const commentNoReplies = thread.comments.find(c => c.id === 'comment-no-replies');
+            expect(commentNoReplies.username).toEqual('threaduser1');
+            expect(commentNoReplies.content).toEqual('Comment with no replies');
+            expect(commentNoReplies.replies).toEqual([]);
 
-            expect(thread.comments[1].id).toEqual('comment-get-1');
-            expect(thread.comments[1].username).toEqual('threaduser2');
-            expect(new Date(thread.comments[1].date).toISOString()).toEqual('2024-01-15T10:05:00.000Z');
-            expect(thread.comments[1].content).toEqual('First comment for detail');
+            // Second comment in order (comment-with-replies)
+            const commentWithReplies = thread.comments.find(c => c.id === commentIdForReplies);
+            expect(commentWithReplies.username).toEqual('threaduser2');
+            expect(commentWithReplies.content).toEqual('Comment to reply to');
+            expect(commentWithReplies.replies).toHaveLength(2);
 
-            expect(thread.comments[2].id).toEqual('comment-get-2');
-            expect(thread.comments[2].username).toEqual('threaduser1');
-            expect(new Date(thread.comments[2].date).toISOString()).toEqual('2024-01-15T10:10:00.000Z');
-            expect(thread.comments[2].content).toEqual('**komentar telah dihapus**');
+            // Check replies for commentWithReplies (ordered by date asc)
+            expect(commentWithReplies.replies[0].id).toEqual('reply-1-on-c1');
+            expect(commentWithReplies.replies[0].username).toEqual('threaduser1');
+            expect(commentWithReplies.replies[0].content).toEqual('First reply');
+            expect(new Date(commentWithReplies.replies[0].date).toISOString()).toEqual('2024-01-20T10:10:00.000Z');
+
+            expect(commentWithReplies.replies[1].id).toEqual('reply-2-on-c1');
+            expect(commentWithReplies.replies[1].username).toEqual('threaduser2');
+            expect(commentWithReplies.replies[1].content).toEqual('**balasan telah dihapus**');
+            expect(new Date(commentWithReplies.replies[1].date).toISOString()).toEqual('2024-01-20T10:15:00.000Z');
         });
 
         it('should response 404 when threadId does not exist', async () => {

@@ -172,4 +172,40 @@ describe('CommentRepositoryPostgres', () => {
             expect(comments[2].is_deleted).toEqual(true);
         });
     });
+
+    describe('verifyCommentExists function', () => { // Added
+        const commentId = 'comment-to-verify';
+
+        beforeEach(async () => {
+            // Ensure the comment exists for positive test cases
+            // It assumes testUserId and testThreadId are setup in beforeAll
+            await CommentsTableTestHelper.addComment({
+                id: commentId,
+                owner: testUserId, // Make sure testUserId is defined in this scope or passed
+                threadId: testThreadId, // Make sure testThreadId is defined
+                content: 'A comment to verify existence',
+            });
+        });
+
+        it('should not throw NotFoundError if comment exists and is not deleted', async () => {
+            const commentRepositoryPostgres = new CommentRepositoryPostgres(pool, {});
+            await expect(commentRepositoryPostgres.verifyCommentExists(commentId))
+                .resolves.not.toThrowError(NotFoundError);
+        });
+
+        it('should throw NotFoundError if comment does not exist', async () => {
+            const commentRepositoryPostgres = new CommentRepositoryPostgres(pool, {});
+            await expect(commentRepositoryPostgres.verifyCommentExists('nonexistent-comment-id'))
+                .rejects.toThrowError(NotFoundError);
+        });
+
+        it('should throw NotFoundError if comment exists but is soft-deleted', async () => {
+            // Soft-delete the comment
+            await pool.query('UPDATE comments SET is_deleted = TRUE WHERE id = $1', [commentId]);
+
+            const commentRepositoryPostgres = new CommentRepositoryPostgres(pool, {});
+            await expect(commentRepositoryPostgres.verifyCommentExists(commentId))
+                .rejects.toThrowError(NotFoundError);
+        });
+    });
 });

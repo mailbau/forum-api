@@ -73,6 +73,17 @@ class CommentRepositoryPostgres extends CommentRepository {
         // It's okay if it returns an empty array if no comments, not a NotFoundError
         return result.rows;
     }
+
+    async verifyCommentExists(commentId) { // Added
+        const query = {
+            text: 'SELECT id FROM comments WHERE id = $1 AND is_deleted = FALSE',
+            values: [commentId],
+        };
+        const result = await this._pool.query(query);
+        if (!result.rowCount) {
+            throw new NotFoundError('komentar tidak ditemukan atau sudah dihapus');
+        }
+    }
 }
 
 module.exports = CommentRepositoryPostgres;

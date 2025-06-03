@@ -36,6 +36,22 @@ class CommentsHandler {
             status: 'success',
         }).code(200);
     }
+
+    async postReplyHandler(request, h) { // Added
+        const addReplyUseCase = this._container.getInstance(AddReplyUseCase.name);
+        const { id: ownerId } = request.auth.credentials;
+        const { threadId, commentId } = request.params;
+        const addedReply = await addReplyUseCase.execute(request.payload, threadId, commentId, ownerId);
+
+        const response = h.response({
+            status: 'success',
+            data: {
+                addedReply,
+            },
+        });
+        response.code(201);
+        return response;
+    }
 }
 
 
