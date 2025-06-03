@@ -8,13 +8,14 @@ const routes = (handler) => ([
             auth: 'forumapi_jwt',
         },
     },
-    // Add other comment-specific routes here later, e.g.:
-    // {
-    //   method: 'DELETE',
-    //   path: '/threads/{threadId}/comments/{commentId}',
-    //   handler: handler.deleteCommentHandler,
-    //   options: { auth: 'forumapi_jwt' },
-    // },
+    {
+        method: 'DELETE',
+        path: '/threads/{threadId}/comments/{commentId}',
+        handler: handler.deleteCommentHandler,
+        options: {
+            auth: 'forumapi_jwt',
+        },
+    },
 ]);
 
 module.exports = routes;
