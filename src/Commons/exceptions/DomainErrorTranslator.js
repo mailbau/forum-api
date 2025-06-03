@@ -21,7 +21,12 @@ DomainErrorTranslator._directories = {
   'NEW_THREAD.NOT_MEET_DATA_TYPE_SPECIFICATION': new InvariantError('tidak dapat membuat thread baru karena tipe data title atau body tidak sesuai'),
   'ADDED_THREAD.NOT_CONTAIN_NEEDED_PROPERTY': new InvariantError('properti yang dibutuhkan pada added thread tidak ada'),
   'ADDED_THREAD.NOT_MEET_DATA_TYPE_SPECIFICATION': new InvariantError('tipe data pada added thread tidak sesuai'),
-
+  'NEW_COMMENT.NOT_CONTAIN_NEEDED_PROPERTY': new InvariantError('tidak dapat membuat komentar baru karena properti content tidak ada'),
+  'NEW_COMMENT.NOT_MEET_DATA_TYPE_SPECIFICATION': new InvariantError('tidak dapat membuat komentar baru karena tipe data content tidak sesuai'),
+  'NEW_COMMENT.CANNOT_BE_EMPTY_STRING': new InvariantError('content komentar tidak boleh kosong'),
+  'ADDED_COMMENT.NOT_CONTAIN_NEEDED_PROPERTY': new InvariantError('properti yang dibutuhkan pada added comment tidak ada'),
+  'ADDED_COMMENT.NOT_MEET_DATA_TYPE_SPECIFICATION': new InvariantError('tipe data pada added comment tidak sesuai'),
+  'THREAD_REPOSITORY.THREAD_NOT_FOUND': new InvariantError('Thread tidak ditemukan'), // General one, can be overridden by NotFoundError's direct message
 };
 
 module.exports = DomainErrorTranslator;

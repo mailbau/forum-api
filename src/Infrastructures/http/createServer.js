@@ -1,27 +1,27 @@
+// src/Infrastructures/http/createServer.js
 const Hapi = require('@hapi/hapi');
-const Jwt = require('@hapi/jwt'); // Added
+const Jwt = require('@hapi/jwt');
 const ClientError = require('../../Commons/exceptions/ClientError');
 const DomainErrorTranslator = require('../../Commons/exceptions/DomainErrorTranslator');
 const users = require('../../Interfaces/http/api/users');
 const authentications = require('../../Interfaces/http/api/authentications');
-const threads = require('../../Interfaces/http/api/threads'); // Added
+const threads = require('../../Interfaces/http/api/threads');
+const comments = require('../../Interfaces/http/api/comments'); // Added: Import the new comments plugin
 
 const createServer = async (container) => {
   const server = Hapi.server({
     host: process.env.HOST,
     port: process.env.PORT,
-    routes: { // Optional: good for CORS handling if needed later
+    routes: {
       cors: {
-        origin: ['*'], // Be more specific in production
+        origin: ['*'],
       },
     },
   });
 
-  // Register @hapi/jwt plugin for authentication (from package.json)
-  await server.register(Jwt); // Added
+  await server.register(Jwt);
 
-  // Define authentication strategy
-  server.auth.strategy('forumapi_jwt', 'jwt', { // Added
+  server.auth.strategy('forumapi_jwt', 'jwt', {
     keys: process.env.ACCESS_TOKEN_KEY,
     verify: {
       aud: false,
@@ -29,7 +29,7 @@ const createServer = async (container) => {
       sub: false,
       nbf: true,
       exp: true,
-      maxAgeSec: process.env.ACCESS_TOKEN_AGE || 3600, // e.g., 1 hour
+      maxAgeSec: parseInt(process.env.ACCESS_TOKEN_AGE || '3600', 10),
     },
     validate: (artifacts, request, h) => ({
       isValid: true,
@@ -49,8 +49,12 @@ const createServer = async (container) => {
       plugin: authentications,
       options: { container },
     },
-    { // Added
-      plugin: threads,
+    {
+      plugin: threads, // This plugin now only handles /threads routes
+      options: { container },
+    },
+    { // Added: Register the new comments plugin
+      plugin: comments,
       options: { container },
     },
   ]);
@@ -79,7 +83,7 @@ const createServer = async (container) => {
         message: 'terjadi kegagalan pada server kami',
       });
       newResponse.code(500);
-      console.error(response); // Log the original server error
+      console.error(response);
       return newResponse;
     }
 

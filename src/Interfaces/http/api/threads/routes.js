@@ -1,13 +1,13 @@
+// src/Interfaces/http/api/threads/routes.js
 const routes = (handler) => ([
     {
         method: 'POST',
         path: '/threads',
         handler: handler.postThreadHandler,
         options: {
-            auth: 'forumapi_jwt', // Apply the JWT authentication strategy
+            auth: 'forumapi_jwt',
         },
     },
-    // ... other thread routes can be added here later
 ]);
 
 module.exports = routes;

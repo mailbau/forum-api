@@ -13,9 +13,12 @@ const UserRepository = require('../Domains/users/UserRepository');
 const PasswordHash = require('../Applications/security/PasswordHash');
 const UserRepositoryPostgres = require('./repository/UserRepositoryPostgres');
 const BcryptPasswordHash = require('./security/BcryptPasswordHash');
-// --- Add ThreadRepository ---
-const ThreadRepository = require('../Domains/threads/ThreadRepository'); // Added
-const ThreadRepositoryPostgres = require('./repository/ThreadRepositoryPostgres'); // Added
+const ThreadRepository = require('../Domains/threads/ThreadRepository');
+const ThreadRepositoryPostgres = require('./repository/ThreadRepositoryPostgres');
+// --- Add CommentRepository ---
+const CommentRepository = require('../Domains/comments/CommentRepository'); // Added
+const CommentRepositoryPostgres = require('./repository/CommentRepositoryPostgres'); // Added
+
 
 // use case
 const AddUserUseCase = require('../Applications/use_case/AddUserUseCase');
@@ -26,8 +29,10 @@ const AuthenticationRepository = require('../Domains/authentications/Authenticat
 const AuthenticationRepositoryPostgres = require('./repository/AuthenticationRepositoryPostgres');
 const LogoutUserUseCase = require('../Applications/use_case/LogoutUserUseCase');
 const RefreshAuthenticationUseCase = require('../Applications/use_case/RefreshAuthenticationUseCase');
-// --- Add AddThreadUseCase ---
-const AddThreadUseCase = require('../Applications/use_case/AddThreadUseCase'); // Added
+const AddThreadUseCase = require('../Applications/use_case/AddThreadUseCase');
+// --- Add AddCommentUseCase ---
+const AddCommentUseCase = require('../Applications/use_case/AddCommentUseCase'); // Added
+
 
 // creating container
 const container = createContainer();
@@ -65,10 +70,20 @@ container.register([
       dependencies: [{ concrete: Jwt.token }],
     },
   },
-  // --- Register ThreadRepositoryPostgres ---
-  { // Added
+  {
     key: ThreadRepository.name,
     Class: ThreadRepositoryPostgres,
+    parameter: {
+      dependencies: [
+        { concrete: pool },
+        { concrete: nanoid },
+      ],
+    },
+  },
+  // --- Register CommentRepositoryPostgres ---
+  { // Added
+    key: CommentRepository.name,
+    Class: CommentRepositoryPostgres,
     parameter: {
       dependencies: [
         { concrete: pool },
@@ -125,15 +140,25 @@ container.register([
       ],
     },
   },
-  // --- Register AddThreadUseCase ---
-  { // Added
+  {
     key: AddThreadUseCase.name,
     Class: AddThreadUseCase,
     parameter: {
       injectType: 'destructuring',
       dependencies: [
         { name: 'threadRepository', internal: ThreadRepository.name },
-        // ownerId will be passed directly to execute method from auth credentials
+      ],
+    },
+  },
+  // --- Register AddCommentUseCase ---
+  { // Added
+    key: AddCommentUseCase.name,
+    Class: AddCommentUseCase,
+    parameter: {
+      injectType: 'destructuring',
+      dependencies: [
+        { name: 'commentRepository', internal: CommentRepository.name },
+        { name: 'threadRepository', internal: ThreadRepository.name },
       ],
     },
   },
