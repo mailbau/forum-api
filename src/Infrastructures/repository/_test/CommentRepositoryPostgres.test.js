@@ -1,4 +1,3 @@
-// src/Infrastructures/repository/_test/CommentRepositoryPostgres.test.js
 const CommentsTableTestHelper = require('../../../../tests/CommentsTableTestHelper');
 const ThreadsTableTestHelper = require('../../../../tests/ThreadsTableTestHelper');
 const UsersTableTestHelper = require('../../../../tests/UsersTableTestHelper');
@@ -67,7 +66,7 @@ describe('CommentRepositoryPostgres', () => {
 
     describe('verifyCommentOwner function', () => {
         const commentId = 'comment-verify-owner';
-        beforeEach(async () => { // Add comment before each test in this block
+        beforeEach(async () => {
             await CommentsTableTestHelper.addComment({
                 id: commentId, owner: testUserId, threadId: testThreadId, content: 'verify owner content',
             });
@@ -104,7 +103,7 @@ describe('CommentRepositoryPostgres', () => {
 
     describe('deleteCommentById function (soft delete)', () => {
         const commentId = 'comment-to-delete';
-        beforeEach(async () => { // Add comment before each test in this block
+        beforeEach(async () => {
             await CommentsTableTestHelper.addComment({
                 id: commentId, owner: testUserId, threadId: testThreadId, content: 'delete me',
             });
@@ -178,11 +177,10 @@ describe('CommentRepositoryPostgres', () => {
 
         beforeEach(async () => {
             // Ensure the comment exists for positive test cases
-            // It assumes testUserId and testThreadId are setup in beforeAll
             await CommentsTableTestHelper.addComment({
                 id: commentId,
-                owner: testUserId, // Make sure testUserId is defined in this scope or passed
-                threadId: testThreadId, // Make sure testThreadId is defined
+                owner: testUserId,
+                threadId: testThreadId,
                 content: 'A comment to verify existence',
             });
         });

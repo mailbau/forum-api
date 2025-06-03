@@ -1,4 +1,3 @@
-// src/Domains/comments/entities/_test/NewComment.test.js
 const NewComment = require('../NewComment');
 
 describe('NewComment entities', () => {

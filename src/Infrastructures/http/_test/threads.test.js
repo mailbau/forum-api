@@ -1,8 +1,8 @@
 const pool = require('../../database/postgres/pool');
 const UsersTableTestHelper = require('../../../../tests/UsersTableTestHelper');
 const ThreadsTableTestHelper = require('../../../../tests/ThreadsTableTestHelper');
-const CommentsTableTestHelper = require('../../../../tests/CommentsTableTestHelper'); // Added
-const RepliesTableTestHelper = require('../../../../tests/RepliesTableTestHelper'); // Added
+const CommentsTableTestHelper = require('../../../../tests/CommentsTableTestHelper');
+const RepliesTableTestHelper = require('../../../../tests/RepliesTableTestHelper');
 const AuthenticationsTableTestHelper = require('../../../../tests/AuthenticationsTableTestHelper');
 const container = require('../../container');
 const createServer = require('../createServer');
@@ -14,13 +14,13 @@ describe('/threads endpoint', () => {
     const testUserId = 'user-threadtest-suite';
     const anotherTestUserId = 'user-anothertest-suite';
     let accessTokenUser1;
-    let accessTokenUser2; // For different owner tests if needed later
+    let accessTokenUser2;
 
     beforeAll(async () => {
         server = await createServer(container);
         tokenManager = container.getInstance(AuthenticationTokenManager.name);
 
-        await UsersTableTestHelper.cleanTable(); // Clean before all tests in this suite
+        await UsersTableTestHelper.cleanTable();
         await UsersTableTestHelper.addUser({
             id: testUserId,
             username: 'threaduser1',
@@ -54,12 +54,12 @@ describe('/threads endpoint', () => {
             const requestPayload = { title: 'Test Thread Title', body: 'This is the body.' };
             const response = await server.inject({
                 method: 'POST', url: '/threads', payload: requestPayload,
-                headers: { Authorization: `Bearer ${accessTokenUser1}` }, // Assuming accessTokenUser1 is defined
+                headers: { Authorization: `Bearer ${accessTokenUser1}` },
             });
             const responseJson = JSON.parse(response.payload);
             expect(response.statusCode).toEqual(201);
             expect(responseJson.status).toEqual('success');
-            expect(responseJson.data.addedThread.owner).toEqual(testUserId); // Assuming testUserId is defined
+            expect(responseJson.data.addedThread.owner).toEqual(testUserId);
         });
 
         // --- Missing tests you can add ---
@@ -73,7 +73,6 @@ describe('/threads endpoint', () => {
             });
             const responseJson = JSON.parse(response.payload);
             expect(response.statusCode).toEqual(401);
-            // Add assertion for responseJson.message if needed, e.g., "Missing authentication"
             expect(responseJson.message).toBeDefined();
         });
 
@@ -104,7 +103,6 @@ describe('/threads endpoint', () => {
             expect(responseJson.status).toEqual('fail');
             expect(responseJson.message).toEqual('tidak dapat membuat thread baru karena tipe data title atau body tidak sesuai');
         });
-        // Add similar tests for missing body, or body not being a string
     });
 
     describe('when POST /threads/{threadId}/comments', () => {
@@ -370,13 +368,12 @@ describe('/threads endpoint', () => {
                 id: commentIdForReplies, content: 'Comment to reply to', owner: user2,
                 threadId: threadIdForGet, date: new Date('2024-01-20T10:05:00.000Z'),
             });
-            await CommentsTableTestHelper.addComment({ // Another comment without replies for variety
+            await CommentsTableTestHelper.addComment({
                 id: 'comment-no-replies', content: 'Comment with no replies', owner: user1,
                 threadId: threadIdForGet, date: new Date('2024-01-20T10:03:00.000Z'),
             });
 
 
-            // Add replies to commentIdForReplies
             await RepliesTableTestHelper.addReply({
                 id: 'reply-1-on-c1', owner: user1, commentId: commentIdForReplies,
                 content: 'First reply', date: new Date('2024-01-20T10:10:00.000Z'),
@@ -450,7 +447,6 @@ describe('/threads endpoint', () => {
         // accessTokenUser1, accessTokenUser2 are available
 
         beforeEach(async () => {
-            // Setup: thread -> comment -> reply (owned by user1)
             threadIdForDeleteReply = 'del-rep-thread-1';
             await ThreadsTableTestHelper.addThread({ id: threadIdForDeleteReply, owner: testUserId });
 
@@ -532,7 +528,6 @@ describe('/threads endpoint', () => {
         });
 
         it('should response 404 when trying to delete an already soft-deleted reply', async () => {
-            // First, soft-delete the reply via DB or a successful API call if preferred for setup
             await pool.query('UPDATE replies SET is_deleted = TRUE WHERE id = $1', [replyIdUser1]);
 
             const response = await server.inject({
@@ -541,7 +536,7 @@ describe('/threads endpoint', () => {
                 headers: { Authorization: `Bearer ${accessTokenUser1}` },
             });
             const responseJson = JSON.parse(response.payload);
-            expect(response.statusCode).toEqual(404); // Because verifyReplyOwner won't find an active reply
+            expect(response.statusCode).toEqual(404);
             expect(responseJson.message).toEqual('balasan tidak ditemukan atau sudah dihapus');
         });
     });

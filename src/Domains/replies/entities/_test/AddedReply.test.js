@@ -1,4 +1,3 @@
-// src/Domains/replies/entities/_test/AddedReply.test.js
 const AddedReply = require('../AddedReply');
 
 describe('AddedReply entity', () => {

@@ -1,4 +1,3 @@
-// src/Domains/replies/entities/_test/ReplyDetail.test.js
 const ReplyDetail = require('../ReplyDetail');
 
 describe('ReplyDetail entity', () => {

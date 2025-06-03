@@ -23,7 +23,7 @@ class ReplyRepositoryPostgres extends ReplyRepository {
         return new AddedReply({ ...result.rows[0] });
     }
 
-    async getRepliesByCommentId(commentId) { // Added
+    async getRepliesByCommentId(commentId) {
         const query = {
             text: `
             SELECT
@@ -43,7 +43,7 @@ class ReplyRepositoryPostgres extends ReplyRepository {
         return result.rows;
     }
 
-    async verifyReplyOwner(replyId, ownerId) { // Added
+    async verifyReplyOwner(replyId, ownerId) {
         const query = {
             text: 'SELECT owner FROM replies WHERE id = $1 AND is_deleted = FALSE',
             values: [replyId],
@@ -58,7 +58,7 @@ class ReplyRepositoryPostgres extends ReplyRepository {
         }
     }
 
-    async deleteReplyById(replyId) { // Added for soft delete
+    async deleteReplyById(replyId) {
         const query = {
             text: 'UPDATE replies SET is_deleted = TRUE WHERE id = $1 RETURNING id',
             values: [replyId],
@@ -66,7 +66,6 @@ class ReplyRepositoryPostgres extends ReplyRepository {
         const result = await this._pool.query(query);
 
         if (!result.rowCount) {
-            // This case should ideally be caught by verifyReplyOwner or a verifyReplyExists first
             throw new NotFoundError('Gagal menghapus balasan. Balasan tidak ditemukan.');
         }
     }

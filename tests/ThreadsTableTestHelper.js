@@ -26,8 +26,6 @@ const ThreadsTableTestHelper = {
 
     async cleanTable() {
         await pool.query('DELETE FROM threads WHERE 1=1');
-        // If you have a foreign key to users and want to reset users as well for some tests:
-        // await pool.query('DELETE FROM users WHERE 1=1');
     },
 };
 

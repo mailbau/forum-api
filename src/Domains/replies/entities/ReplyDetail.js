@@ -1,4 +1,3 @@
-// src/Domains/replies/entities/ReplyDetail.js
 class ReplyDetail {
     constructor(payload) {
         this._verifyPayload(payload);

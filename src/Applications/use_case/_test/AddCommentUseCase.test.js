@@ -60,7 +60,7 @@ describe('AddCommentUseCase', () => {
         const mockThreadRepository = new ThreadRepository();
 
         // Explicitly mock addComment even if you don't expect it to be called
-        mockCommentRepository.addComment = jest.fn(); // <--- ADD THIS MOCK DEFINITION
+        mockCommentRepository.addComment = jest.fn();
 
         mockThreadRepository.verifyThreadExists = jest.fn()
             .mockImplementation(() => Promise.reject(new Error('THREAD_REPOSITORY.THREAD_NOT_FOUND')));
@@ -74,6 +74,6 @@ describe('AddCommentUseCase', () => {
         await expect(addCommentUseCase.execute(useCasePayload, threadId, ownerId))
             .rejects.toThrowError('THREAD_REPOSITORY.THREAD_NOT_FOUND');
         expect(mockThreadRepository.verifyThreadExists).toBeCalledWith(threadId);
-        expect(mockCommentRepository.addComment).not.toBeCalled(); // Now this will work
+        expect(mockCommentRepository.addComment).not.toBeCalled();
     });
 });

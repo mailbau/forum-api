@@ -1,6 +1,5 @@
-// src/Domains/comments/entities/_test/CommentDetail.test.js
 const CommentDetail = require('../CommentDetail');
-const ReplyDetail = require('../../../replies/entities/ReplyDetail'); // Import ReplyDetail
+const ReplyDetail = require('../../../replies/entities/ReplyDetail');
 
 describe('CommentDetail entity', () => {
     it('should create CommentDetail object correctly for non-deleted comment with replies', () => {
@@ -19,7 +18,7 @@ describe('CommentDetail entity', () => {
             date: new Date().toISOString(),
             content: 'sebuah comment',
             isDeleted: false,
-            replies: [mockReplyDetail], // Add replies
+            replies: [mockReplyDetail],
         };
         const commentDetail = new CommentDetail(payload);
 
@@ -27,7 +26,7 @@ describe('CommentDetail entity', () => {
         expect(commentDetail.username).toEqual(payload.username);
         expect(commentDetail.date).toEqual(payload.date);
         expect(commentDetail.content).toEqual(payload.content);
-        expect(commentDetail.replies).toEqual([mockReplyDetail]); // Check replies
+        expect(commentDetail.replies).toEqual([mockReplyDetail]);
         expect(commentDetail.replies[0]).toBeInstanceOf(ReplyDetail);
     });
 

@@ -1,9 +1,8 @@
-// src/Interfaces/http/api/comments/routes.js
 const routes = (handler) => ([
     {
         method: 'POST',
-        path: '/threads/{threadId}/comments', // Path remains the same, reflecting resource hierarchy
-        handler: handler.postCommentHandler,  // But uses the new CommentsHandler
+        path: '/threads/{threadId}/comments',
+        handler: handler.postCommentHandler,
         options: {
             auth: 'forumapi_jwt',
         },

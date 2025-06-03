@@ -1,4 +1,3 @@
-// src/Infrastructures/http/createServer.js
 const Hapi = require('@hapi/hapi');
 const Jwt = require('@hapi/jwt');
 const ClientError = require('../../Commons/exceptions/ClientError');
@@ -6,7 +5,7 @@ const DomainErrorTranslator = require('../../Commons/exceptions/DomainErrorTrans
 const users = require('../../Interfaces/http/api/users');
 const authentications = require('../../Interfaces/http/api/authentications');
 const threads = require('../../Interfaces/http/api/threads');
-const comments = require('../../Interfaces/http/api/comments'); // Added: Import the new comments plugin
+const comments = require('../../Interfaces/http/api/comments');
 
 const createServer = async (container) => {
   const server = Hapi.server({
@@ -50,10 +49,10 @@ const createServer = async (container) => {
       options: { container },
     },
     {
-      plugin: threads, // This plugin now only handles /threads routes
+      plugin: threads,
       options: { container },
     },
-    { // Added: Register the new comments plugin
+    {
       plugin: comments,
       options: { container },
     },
@@ -74,11 +73,10 @@ const createServer = async (container) => {
         return newResponse;
       }
 
-      // If it's not a ClientError and it's a server error (isBoom && isServer)
       if (response.isBoom && response.isServer) { // Check if it's a Boom server error
         console.error('------ Original Server Error Start ------');
         console.error(response.stack || response.message || response); // Log stack or message of the Boom error
-        if (response.data) { // Boom often wraps original error in data
+        if (response.data) {
           console.error('Wrapped Error Data:', response.data);
         }
         if (response.output && response.output.payload && response.output.payload.message !== 'An internal server error occurred') {
@@ -94,13 +92,10 @@ const createServer = async (container) => {
         return newResponse;
       }
 
-      // If it's not a ClientError and not a Boom server error, but still an Error
-      // This might catch generic errors that weren't Boomified yet
-      if (!translatedError.isServer) { // This condition might be part of the original logic
+      if (!translatedError.isServer) {
         return h.continue; // Let Hapi handle other client errors (like 404 for truly unmatched routes)
       }
 
-      // Fallback for other unexpected errors that are not ClientError but are Error instances
       console.error('------ Unhandled Application Error Start ------');
       console.error(response.stack || response.message || response); // Log the actual error
       console.error('------ Unhandled Application Error End ------');

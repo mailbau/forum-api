@@ -1,4 +1,3 @@
-// src/Interfaces/http/api/comments/index.js
 const CommentsHandler = require('./handler');
 const routes = require('./routes');
 

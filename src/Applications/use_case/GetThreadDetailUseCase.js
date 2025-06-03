@@ -31,7 +31,7 @@ class GetThreadDetailUseCase {
                 date: comment.date,
                 content: comment.content,
                 isDeleted: comment.is_deleted,
-                replies: processedReplies, // Add processed replies
+                replies: processedReplies,
             });
         }));
 

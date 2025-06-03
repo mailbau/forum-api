@@ -1,4 +1,3 @@
-// src/Interfaces/http/api/threads/routes.js
 const routes = (handler) => ([
     {
         method: 'POST',

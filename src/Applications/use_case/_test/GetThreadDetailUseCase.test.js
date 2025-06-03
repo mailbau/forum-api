@@ -54,7 +54,7 @@ describe('GetThreadDetailUseCase', () => {
         const getThreadDetailUseCase = new GetThreadDetailUseCase({
             threadRepository: mockThreadRepository,
             commentRepository: mockCommentRepository,
-            replyRepository: mockReplyRepository, // Added
+            replyRepository: mockReplyRepository,
         });
 
         // Action
@@ -65,7 +65,7 @@ describe('GetThreadDetailUseCase', () => {
         expect(mockThreadRepository.getThreadById).toHaveBeenCalledWith(threadId);
         expect(mockCommentRepository.getCommentsByThreadId).toHaveBeenCalledWith(threadId);
         expect(mockReplyRepository.getRepliesByCommentId).toHaveBeenCalledWith('comment-1');
-        expect(mockReplyRepository.getRepliesByCommentId).toHaveBeenCalledWith('comment-2'); // Called for each comment
+        expect(mockReplyRepository.getRepliesByCommentId).toHaveBeenCalledWith('comment-2');
 
         expect(threadDetail).toBeInstanceOf(ThreadDetail);
         expect(threadDetail.comments).toHaveLength(2);
@@ -93,8 +93,8 @@ describe('GetThreadDetailUseCase', () => {
         const mockCommentRepository = new CommentRepository();
 
         mockThreadRepository.verifyThreadExists = jest.fn(() => Promise.reject(new NotFoundError('thread tidak ditemukan')));
-        mockThreadRepository.getThreadById = jest.fn(); // Won't be called
-        mockCommentRepository.getCommentsByThreadId = jest.fn(); // Won't be called
+        mockThreadRepository.getThreadById = jest.fn();
+        mockCommentRepository.getCommentsByThreadId = jest.fn();
 
         const getThreadDetailUseCase = new GetThreadDetailUseCase({
             threadRepository: mockThreadRepository,

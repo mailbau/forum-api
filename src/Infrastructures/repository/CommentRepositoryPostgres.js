@@ -1,4 +1,3 @@
-// src/Infrastructures/repository/CommentRepositoryPostgres.js
 const AddedComment = require('../../Domains/comments/entities/AddedComment');
 const CommentRepository = require('../../Domains/comments/CommentRepository');
 const NotFoundError = require('../../Commons/exceptions/NotFoundError');
@@ -24,7 +23,7 @@ class CommentRepositoryPostgres extends CommentRepository {
         return new AddedComment({ ...result.rows[0] });
     }
 
-    async verifyCommentOwner(commentId, ownerId) { // Added
+    async verifyCommentOwner(commentId, ownerId) {
         const query = {
             text: 'SELECT owner FROM comments WHERE id = $1 AND is_deleted = FALSE', // Only check non-deleted comments
             values: [commentId],
@@ -40,20 +39,18 @@ class CommentRepositoryPostgres extends CommentRepository {
         }
     }
 
-    async deleteCommentById(commentId) { // Added for soft delete
+    async deleteCommentById(commentId) {
         const query = {
             text: 'UPDATE comments SET is_deleted = TRUE WHERE id = $1 RETURNING id',
             values: [commentId],
         };
         const result = await this._pool.query(query);
         if (!result.rowCount) {
-            // This case should ideally be caught by verifyCommentOwner or a verifyCommentExists first
-            // but as a safeguard:
             throw new NotFoundError('Gagal menghapus komentar. Komentar tidak ditemukan.');
         }
     }
 
-    async getCommentsByThreadId(threadId) { // Added
+    async getCommentsByThreadId(threadId) {
         const query = {
             text: `
             SELECT
@@ -70,7 +67,6 @@ class CommentRepositoryPostgres extends CommentRepository {
             values: [threadId],
         };
         const result = await this._pool.query(query);
-        // It's okay if it returns an empty array if no comments, not a NotFoundError
         return result.rows;
     }
 

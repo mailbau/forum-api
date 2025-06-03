@@ -15,7 +15,7 @@ const UserRepositoryPostgres = require('./repository/UserRepositoryPostgres');
 const BcryptPasswordHash = require('./security/BcryptPasswordHash');
 const ThreadRepository = require('../Domains/threads/ThreadRepository');
 const ThreadRepositoryPostgres = require('./repository/ThreadRepositoryPostgres');
-// --- Add CommentRepository ---
+
 const CommentRepository = require('../Domains/comments/CommentRepository'); // Added
 const CommentRepositoryPostgres = require('./repository/CommentRepositoryPostgres'); // Added
 
@@ -33,7 +33,6 @@ const AuthenticationRepositoryPostgres = require('./repository/AuthenticationRep
 const LogoutUserUseCase = require('../Applications/use_case/LogoutUserUseCase');
 const RefreshAuthenticationUseCase = require('../Applications/use_case/RefreshAuthenticationUseCase');
 const AddThreadUseCase = require('../Applications/use_case/AddThreadUseCase');
-// --- Add AddCommentUseCase ---
 const AddCommentUseCase = require('../Applications/use_case/AddCommentUseCase');
 const DeleteCommentUseCase = require('../Applications/use_case/DeleteCommentUseCase');
 const GetThreadDetailUseCase = require('../Applications/use_case/GetThreadDetailUseCase');
@@ -86,8 +85,7 @@ container.register([
       ],
     },
   },
-  // --- Register CommentRepositoryPostgres ---
-  { // Added
+  {
     key: CommentRepository.name,
     Class: CommentRepositoryPostgres,
     parameter: {
@@ -109,7 +107,6 @@ container.register([
   },
 ]);
 
-// registering use cases
 container.register([
   {
     key: AddUserUseCase.name,
@@ -166,8 +163,7 @@ container.register([
       ],
     },
   },
-  // --- Register AddCommentUseCase ---
-  { // Added
+  {
     key: AddCommentUseCase.name,
     Class: AddCommentUseCase,
     parameter: {

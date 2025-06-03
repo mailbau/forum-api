@@ -5,9 +5,6 @@ const PasswordHash = require('../../security/PasswordHash');
 const AddUserUseCase = require('../AddUserUseCase');
 
 describe('AddUserUseCase', () => {
-  /**
-   * Menguji apakah use case mampu mengoskestrasikan langkah demi langkah dengan benar.
-   */
   it('should orchestrating the add user action correctly', async () => {
     // Arrange
     const useCasePayload = {

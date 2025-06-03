@@ -14,7 +14,6 @@ class ThreadDetail {
         this.body = body;
         this.date = date;
         this.username = username;
-        // comments are expected to be an array of CommentDetail instances or raw data for it
         this.comments = comments;
     }
 

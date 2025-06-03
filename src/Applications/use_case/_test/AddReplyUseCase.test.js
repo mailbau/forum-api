@@ -62,8 +62,8 @@ describe('AddReplyUseCase', () => {
         const mockThreadRepository = new ThreadRepository();
 
         mockThreadRepository.verifyThreadExists = jest.fn(() => Promise.reject(new NotFoundError('thread not found')));
-        mockCommentRepository.verifyCommentExists = jest.fn(); // Should not be called
-        mockReplyRepository.addReply = jest.fn(); // Should not be called
+        mockCommentRepository.verifyCommentExists = jest.fn();
+        mockReplyRepository.addReply = jest.fn();
 
         const addReplyUseCase = new AddReplyUseCase({
             replyRepository: mockReplyRepository,
@@ -89,7 +89,7 @@ describe('AddReplyUseCase', () => {
 
         mockThreadRepository.verifyThreadExists = jest.fn(() => Promise.resolve());
         mockCommentRepository.verifyCommentExists = jest.fn(() => Promise.reject(new NotFoundError('comment not found')));
-        mockReplyRepository.addReply = jest.fn(); // Should not be called
+        mockReplyRepository.addReply = jest.fn();
 
         const addReplyUseCase = new AddReplyUseCase({
             replyRepository: mockReplyRepository,

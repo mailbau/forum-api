@@ -1,4 +1,3 @@
-// src/Infrastructures/repository/_test/ReplyRepositoryPostgres.test.js
 const UsersTableTestHelper = require('../../../../tests/UsersTableTestHelper');
 const ThreadsTableTestHelper = require('../../../../tests/ThreadsTableTestHelper');
 const CommentsTableTestHelper = require('../../../../tests/CommentsTableTestHelper');
@@ -67,7 +66,7 @@ describe('ReplyRepositoryPostgres', () => {
     describe('getRepliesByCommentId function', () => {
         // Use userId, anotherUserId, threadId, commentId from beforeAll
         const user1 = userId; // 'user-reply-test', username 'replyuser'
-        // const user2 = anotherUserId; // If needed for different reply owners
+        // const user2 = anotherUserId; 
 
         it('should return empty array if comment has no replies', async () => {
             const replyRepositoryPostgres = new ReplyRepositoryPostgres(pool, {});
@@ -124,7 +123,7 @@ describe('ReplyRepositoryPostgres', () => {
         });
 
         it('should throw AuthorizationError when user is not the owner', async () => {
-            const anotherOwnerId = 'user-another-for-reply'; // Ensure this user exists or add them
+            const anotherOwnerId = 'user-another-for-reply';
             await UsersTableTestHelper.addUser({ id: anotherOwnerId, username: 'anotherreplyowner' });
 
             const replyRepositoryPostgres = new ReplyRepositoryPostgres(pool, {});

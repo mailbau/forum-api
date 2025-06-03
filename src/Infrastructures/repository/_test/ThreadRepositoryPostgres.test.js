@@ -1,5 +1,5 @@
 const ThreadsTableTestHelper = require('../../../../tests/ThreadsTableTestHelper');
-const UsersTableTestHelper = require('../../../../tests/UsersTableTestHelper'); // For owner dependency
+const UsersTableTestHelper = require('../../../../tests/UsersTableTestHelper');
 const AddedThread = require('../../../Domains/threads/entities/AddedThread');
 const pool = require('../../database/postgres/pool');
 const ThreadRepositoryPostgres = require('../ThreadRepositoryPostgres');
@@ -27,7 +27,7 @@ describe('ThreadRepositoryPostgres', () => {
             const addThreadPayload = {
                 title: 'Test Title',
                 body: 'Test Body',
-                owner: 'user-test-owner', // Ensure this user exists
+                owner: 'user-test-owner',
             };
             const fakeIdGenerator = () => '123';
             const threadRepositoryPostgres = new ThreadRepositoryPostgres(pool, fakeIdGenerator);
