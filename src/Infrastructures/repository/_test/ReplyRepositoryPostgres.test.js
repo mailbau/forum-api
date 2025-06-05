@@ -97,14 +97,17 @@ describe('ReplyRepositoryPostgres', () => {
             expect(replies[0].username).toEqual('replyuser');
             expect(replies[0].content).toEqual('First reply');
             expect(replies[0].is_deleted).toEqual(false);
+            expect(replies[0].date).toEqual(new Date('2023-02-01T10:00:00.000Z'));
 
             expect(replies[1].id).toEqual('reply-r2');
             expect(replies[1].content).toEqual('Second reply');
             expect(replies[1].is_deleted).toEqual(false);
+            expect(replies[1].date).toEqual(new Date('2023-02-01T11:00:00.000Z'));
 
             expect(replies[2].id).toEqual('reply-r3');
             expect(replies[2].content).toEqual('Third reply (deleted)'); // Raw content
             expect(replies[2].is_deleted).toEqual(true);
+            expect(replies[2].date).toEqual(new Date('2023-02-01T12:00:00.000Z'));
         });
     });
 
@@ -119,7 +122,7 @@ describe('ReplyRepositoryPostgres', () => {
         it('should not throw error when user is the owner and reply exists and not deleted', async () => {
             const replyRepositoryPostgres = new ReplyRepositoryPostgres(pool, {});
             await expect(replyRepositoryPostgres.verifyReplyOwner(replyId, userId))
-                .resolves.not.toThrowError();
+                .resolves.not.toThrowError(AuthorizationError);
         });
 
         it('should throw AuthorizationError when user is not the owner', async () => {

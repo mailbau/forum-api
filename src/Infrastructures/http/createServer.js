@@ -73,39 +73,16 @@ const createServer = async (container) => {
         return newResponse;
       }
 
-      if (response.isBoom && response.isServer) { // Check if it's a Boom server error
-        console.error('------ Original Server Error Start ------');
-        console.error(response.stack || response.message || response); // Log stack or message of the Boom error
-        if (response.data) {
-          console.error('Wrapped Error Data:', response.data);
-        }
-        if (response.output && response.output.payload && response.output.payload.message !== 'An internal server error occurred') {
-          console.error('Boom Payload Message:', response.output.payload.message);
-        }
-        console.error('------ Original Server Error End ------');
-
-        const newResponse = h.response({
-          status: 'error',
-          message: 'terjadi kegagalan pada server kami',
-        });
-        newResponse.code(500);
-        return newResponse;
+      if (response.isBoom && !response.isServer) {
+        return h.continue;
       }
 
-      if (!translatedError.isServer) {
-        return h.continue; // Let Hapi handle other client errors (like 404 for truly unmatched routes)
-      }
-
-      console.error('------ Unhandled Application Error Start ------');
-      console.error(response.stack || response.message || response); // Log the actual error
-      console.error('------ Unhandled Application Error End ------');
       const newResponse = h.response({
         status: 'error',
-        message: 'terjadi kegagalan pada server kami (unexpected)',
+        message: 'terjadi kegagalan pada server kami',
       });
       newResponse.code(500);
       return newResponse;
-
     }
 
     return h.continue;

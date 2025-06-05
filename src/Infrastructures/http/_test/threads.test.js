@@ -540,4 +540,106 @@ describe('/threads endpoint', () => {
             expect(responseJson.message).toEqual('balasan tidak ditemukan atau sudah dihapus');
         });
     });
+
+    describe('when POST /threads/{threadId}/comments/{commentId}/replies', () => {
+        let threadIdForReply;
+        let commentIdForReply;
+
+        beforeEach(async () => {
+            // Setup thread and comment to reply to
+            threadIdForReply = 'thread-for-replying';
+            await ThreadsTableTestHelper.addThread({ id: threadIdForReply, owner: testUserId });
+
+            commentIdForReply = 'comment-for-replying';
+            await CommentsTableTestHelper.addComment({ id: commentIdForReply, owner: testUserId, threadId: threadIdForReply });
+        });
+
+        it('should response 201 and persisted reply when payload valid and authenticated', async () => {
+            const requestPayload = { content: 'This is a new reply!' };
+
+            const response = await server.inject({
+                method: 'POST',
+                url: `/threads/${threadIdForReply}/comments/${commentIdForReply}/replies`,
+                payload: requestPayload,
+                headers: { Authorization: `Bearer ${accessTokenUser2}` }, // User2 posts a reply
+            });
+
+            const responseJson = JSON.parse(response.payload);
+            expect(response.statusCode).toEqual(201);
+            expect(responseJson.status).toEqual('success');
+            expect(responseJson.data.addedReply).toBeDefined();
+            expect(responseJson.data.addedReply.id).toBeDefined();
+            expect(responseJson.data.addedReply.content).toEqual(requestPayload.content);
+            expect(responseJson.data.addedReply.owner).toEqual(anotherTestUserId); // Check owner is user2
+
+            // Verify in DB
+            const replies = await RepliesTableTestHelper.findReplyById(responseJson.data.addedReply.id);
+            expect(replies).toHaveLength(1);
+            expect(replies[0].content).toEqual(requestPayload.content);
+            expect(replies[0].owner).toEqual(anotherTestUserId);
+            expect(replies[0].comment_id).toEqual(commentIdForReply);
+        });
+
+        it('should response 401 when no access token is provided', async () => {
+            const requestPayload = { content: 'A reply attempt.' };
+            const response = await server.inject({
+                method: 'POST',
+                url: `/threads/${threadIdForReply}/comments/${commentIdForReply}/replies`,
+                payload: requestPayload,
+            });
+            expect(response.statusCode).toEqual(401);
+        });
+
+        it('should response 404 if thread does not exist', async () => {
+            const requestPayload = { content: 'A reply.' };
+            const response = await server.inject({
+                method: 'POST',
+                url: `/threads/nonexistent-thread/comments/${commentIdForReply}/replies`,
+                payload: requestPayload,
+                headers: { Authorization: `Bearer ${accessTokenUser1}` },
+            });
+            const responseJson = JSON.parse(response.payload);
+            expect(response.statusCode).toEqual(404);
+            expect(responseJson.message).toEqual('thread tidak ditemukan');
+        });
+
+        it('should response 404 if comment does not exist', async () => {
+            const requestPayload = { content: 'A reply.' };
+            const response = await server.inject({
+                method: 'POST',
+                url: `/threads/${threadIdForReply}/comments/nonexistent-comment/replies`,
+                payload: requestPayload,
+                headers: { Authorization: `Bearer ${accessTokenUser1}` },
+            });
+            const responseJson = JSON.parse(response.payload);
+            expect(response.statusCode).toEqual(404);
+            expect(responseJson.message).toEqual('komentar tidak ditemukan atau sudah dihapus');
+        });
+
+        it('should response 400 if payload content is missing', async () => {
+            const requestPayload = {}; // Missing content
+            const response = await server.inject({
+                method: 'POST',
+                url: `/threads/${threadIdForReply}/comments/${commentIdForReply}/replies`,
+                payload: requestPayload,
+                headers: { Authorization: `Bearer ${accessTokenUser1}` },
+            });
+            const responseJson = JSON.parse(response.payload);
+            expect(response.statusCode).toEqual(400);
+            expect(responseJson.message).toEqual('tidak dapat membuat balasan baru karena properti content tidak ada');
+        });
+
+        it('should response 400 if payload content is not a string', async () => {
+            const requestPayload = { content: 123 };
+            const response = await server.inject({
+                method: 'POST',
+                url: `/threads/${threadIdForReply}/comments/${commentIdForReply}/replies`,
+                payload: requestPayload,
+                headers: { Authorization: `Bearer ${accessTokenUser1}` },
+            });
+            const responseJson = JSON.parse(response.payload);
+            expect(response.statusCode).toEqual(400);
+            expect(responseJson.message).toEqual('tidak dapat membuat balasan baru karena tipe data content tidak sesuai');
+        });
+    });
 });

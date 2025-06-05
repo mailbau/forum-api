@@ -155,20 +155,24 @@ describe('CommentRepositoryPostgres', () => {
 
             // Assert
             expect(comments).toHaveLength(3);
+
             expect(comments[0].id).toEqual('comment-c1');
             expect(comments[0].username).toEqual('deletecommentowner');
             expect(comments[0].content).toEqual('First comment');
             expect(comments[0].is_deleted).toEqual(false);
+            expect(comments[0].date).toEqual(new Date('2023-01-01T10:00:00.000Z'));
 
             expect(comments[1].id).toEqual('comment-c2');
             expect(comments[1].username).toEqual('deletecommentowner');
             expect(comments[1].content).toEqual('Second comment');
             expect(comments[1].is_deleted).toEqual(false);
+            expect(comments[1].date).toEqual(new Date('2023-01-01T11:00:00.000Z'));
 
             expect(comments[2].id).toEqual('comment-c3');
             expect(comments[2].username).toEqual('anotheruserfordelete');
-            expect(comments[2].content).toEqual('Third comment'); // Raw content from DB
+            expect(comments[2].content).toEqual('Third comment');
             expect(comments[2].is_deleted).toEqual(true);
+            expect(comments[2].date).toEqual(new Date('2023-01-01T12:00:00.000Z'));
         });
     });
 
