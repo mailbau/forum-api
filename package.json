@@ -12,7 +12,7 @@
     "test": "jest --setupFiles dotenv/config -i",
     "test:watch:change": "jest --watch --setupFiles dotenv/config -i",
     "test:watch": "jest --watchAll --coverage --setupFiles dotenv/config -i",
-    "migrate": "node-pg-migrate",
+    "migrate": "node-pg-migrate up",
     "migrate:test": "node-pg-migrate -f config/database/test.json"
   },
   "keywords": [],
