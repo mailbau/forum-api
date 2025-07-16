@@ -1,0 +1,16 @@
+# Ignore local development artifacts and secrets
+node_modules
+npm-debug.log
+.env
+.idea
+.vscode
+
+# Ignore the Dockerfile itself and other config
+Dockerfile
+docker-compose.yml
+.dockerignore
+nixpacks.toml
+
+# Ignore Git files
+.git
+.gitignore
