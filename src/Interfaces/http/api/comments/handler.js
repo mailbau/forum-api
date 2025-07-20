@@ -2,6 +2,7 @@ const AddCommentUseCase = require('../../../../Applications/use_case/AddCommentU
 const DeleteCommentUseCase = require('../../../../Applications/use_case/DeleteCommentUseCase');
 const AddReplyUseCase = require('../../../../Applications/use_case/AddReplyUseCase');
 const DeleteReplyUseCase = require('../../../../Applications/use_case/DeleteReplyUseCase');
+const ToggleCommentLikeUseCase = require('../../../../Applications/use_case/ToggleCommentLikeUseCase');
 
 class CommentsHandler {
     constructor(container) {
@@ -10,6 +11,7 @@ class CommentsHandler {
         this.deleteCommentHandler = this.deleteCommentHandler.bind(this);
         this.postReplyHandler = this.postReplyHandler.bind(this);
         this.deleteReplyHandler = this.deleteReplyHandler.bind(this);
+        this.putCommentLikeHandler = this.putCommentLikeHandler.bind(this);
     }
 
     async postCommentHandler(request, h) {
@@ -63,6 +65,17 @@ class CommentsHandler {
 
         await deleteReplyUseCase.execute(threadId, commentId, replyId, ownerId);
 
+        return h.response({
+            status: 'success',
+        }).code(200);
+    }
+
+    async putCommentLikeHandler(request, h) {
+        const toggleCommentLikeUseCase = this._container.getInstance(ToggleCommentLikeUseCase.name);
+        const { id: ownerId } = request.auth.credentials;
+        const { threadId, commentId } = request.params;
+
+        await toggleCommentLikeUseCase.execute(threadId, commentId, ownerId);
         return h.response({
             status: 'success',
         }).code(200);

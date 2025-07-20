@@ -32,6 +32,7 @@ class GetThreadDetailUseCase {
                 content: comment.content,
                 isDeleted: comment.is_deleted,
                 replies: processedReplies,
+                likeCount: comment.like_count,
             });
         }));
 

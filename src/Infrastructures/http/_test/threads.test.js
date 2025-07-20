@@ -4,6 +4,7 @@ const ThreadsTableTestHelper = require('../../../../tests/ThreadsTableTestHelper
 const CommentsTableTestHelper = require('../../../../tests/CommentsTableTestHelper');
 const RepliesTableTestHelper = require('../../../../tests/RepliesTableTestHelper');
 const AuthenticationsTableTestHelper = require('../../../../tests/AuthenticationsTableTestHelper');
+const LikesTableTestHelper = require('../../../../tests/LikesTableTestHelper');
 const container = require('../../container');
 const createServer = require('../createServer');
 const AuthenticationTokenManager = require('../../../Applications/security/AuthenticationTokenManager');
@@ -640,6 +641,131 @@ describe('/threads endpoint', () => {
             const responseJson = JSON.parse(response.payload);
             expect(response.statusCode).toEqual(400);
             expect(responseJson.message).toEqual('tidak dapat membuat balasan baru karena tipe data content tidak sesuai');
+        });
+    });
+
+    describe('when PUT /threads/{threadId}/comments/{commentId}/likes', () => {
+        let threadId;
+        let commentId;
+        const likerId = anotherTestUserId;
+        const ownerId = testUserId;
+
+        beforeEach(async () => {
+            // Setup thread and comment for liking
+            threadId = await ThreadsTableTestHelper.addThread({
+                id: 'thread-for-likes',
+                owner: ownerId,
+                title: 'Thread to be liked',
+                body: 'Body of the liked thread',
+            });
+            commentId = await CommentsTableTestHelper.addComment({
+                id: 'comment-to-be-liked',
+                owner: ownerId,
+                threadId: threadId,
+                content: 'Comment that can be liked',
+            });
+        });
+
+        // Kriteria: Menyukai dan batal menyukai komentar thread merupakan resource yang dibatasi (restrict)
+        it('should response 401 when no access token is provided', async () => {
+            const response = await server.inject({
+                method: 'PUT',
+                url: `/threads/${threadId}/comments/${commentId}/likes`,
+                // No Authorization header
+            });
+            expect(response.statusCode).toEqual(401);
+            const responseJson = JSON.parse(response.payload);
+            expect(responseJson.message).toEqual('Missing authentication'); // As per Hapi JWT default
+        });
+
+        // Skenario 1: User menyukai komentar untuk pertama kalinya
+        it('should response 200 and add a like when user has not liked the comment', async () => {
+            const response = await server.inject({
+                method: 'PUT',
+                url: `/threads/${threadId}/comments/${commentId}/likes`,
+                headers: { Authorization: `Bearer ${accessTokenUser2}` },
+            });
+
+            // Assert response
+            const responseJson = JSON.parse(response.payload);
+            expect(response.statusCode).toEqual(200);
+            expect(responseJson.status).toEqual('success');
+
+            // Verify like exists in DB
+            const likes = await LikesTableTestHelper.findLikeByCommentAndOwner(commentId, likerId);
+            expect(likes).toHaveLength(1);
+            expect(likes[0].comment_id).toEqual(commentId);
+            expect(likes[0].owner).toEqual(likerId);
+
+            // Verify likeCount in GET thread endpoint
+            const getThreadResponse = await server.inject({
+                method: 'GET',
+                url: `/threads/${threadId}`,
+            });
+            const getThreadResponseJson = JSON.parse(getThreadResponse.payload);
+            const targetComment = getThreadResponseJson.data.thread.comments.find(
+                (c) => c.id === commentId,
+            );
+            expect(targetComment.likeCount).toEqual(1);
+        });
+
+        // Skenario 2: User membatalkan suka komentar yang sudah disukai
+        it('should response 200 and remove a like when user has already liked the comment', async () => {
+            await LikesTableTestHelper.addLike({
+                id: `like-${likerId}`,
+                commentId: commentId,
+                owner: likerId,
+            });
+
+            const response = await server.inject({
+                method: 'PUT',
+                url: `/threads/${threadId}/comments/${commentId}/likes`,
+                headers: { Authorization: `Bearer ${accessTokenUser2}` },
+            });
+
+            // Assert response
+            const responseJson = JSON.parse(response.payload);
+            expect(response.statusCode).toEqual(200);
+            expect(responseJson.status).toEqual('success');
+
+            // Verify like is removed from DB
+            const likes = await LikesTableTestHelper.findLikeByCommentAndOwner(commentId, likerId);
+            expect(likes).toHaveLength(0);
+
+            // Verify likeCount in GET thread endpoint
+            const getThreadResponse = await server.inject({
+                method: 'GET',
+                url: `/threads/${threadId}`,
+            });
+            const getThreadResponseJson = JSON.parse(getThreadResponse.payload);
+            const targetComment = getThreadResponseJson.data.thread.comments.find(
+                (c) => c.id === commentId,
+            );
+            expect(targetComment.likeCount).toEqual(0);
+        });
+
+        it('should response 404 when threadId does not exist', async () => {
+            const response = await server.inject({
+                method: 'PUT',
+                url: `/threads/nonexistent-thread-id/comments/${commentId}/likes`,
+                headers: { Authorization: `Bearer ${accessTokenUser2}` },
+            });
+            const responseJson = JSON.parse(response.payload);
+            expect(response.statusCode).toEqual(404);
+            expect(responseJson.status).toEqual('fail');
+            expect(responseJson.message).toEqual('thread tidak ditemukan');
+        });
+
+        it('should response 404 when commentId does not exist', async () => {
+            const response = await server.inject({
+                method: 'PUT',
+                url: `/threads/${threadId}/comments/nonexistent-comment-id/likes`,
+                headers: { Authorization: `Bearer ${accessTokenUser2}` },
+            });
+            const responseJson = JSON.parse(response.payload);
+            expect(response.statusCode).toEqual(404);
+            expect(responseJson.status).toEqual('fail');
+            expect(responseJson.message).toEqual('komentar tidak ditemukan atau sudah dihapus');
         });
     });
 });

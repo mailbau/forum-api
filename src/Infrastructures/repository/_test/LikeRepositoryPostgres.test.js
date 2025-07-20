@@ -2,7 +2,7 @@ const UsersTableTestHelper = require('../../../../tests/UsersTableTestHelper');
 const ThreadsTableTestHelper = require('../../../../tests/ThreadsTableTestHelper');
 const CommentsTableTestHelper = require('../../../../tests/CommentsTableTestHelper');
 const LikesTableTestHelper = require('../../../../tests/LikesTableTestHelper');
-const pool = require('../../../database/postgres/pool');
+const pool = require('../../database/postgres/pool');
 const LikeRepositoryPostgres = require('../LikeRepositoryPostgres');
 
 describe('LikeRepositoryPostgres', () => {
