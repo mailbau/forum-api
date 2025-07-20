@@ -18,7 +18,7 @@ jobs:
         image: postgres
         env:
          POSTGRES_USER: postgres
-         POSTGRES_PASSWORD: Database123!
+         POSTGRES_PASSWORD: supersecret
          POSTGRES_DB: forumapi_test
          
         options: >-
@@ -47,7 +47,7 @@ jobs:
         PGHOST: localhost
         PGPORT: 5432
         PGUSER: postgres
-        PGPASSWORD: Database123!
+        PGPASSWORD: supersecret
         PGDATABASE: forumapi_test
         ACCESS_TOKEN_KEY: secret
         REFRESH_TOKEN_KEY: terces
